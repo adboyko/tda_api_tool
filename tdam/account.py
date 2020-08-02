@@ -1,37 +1,20 @@
 import requests
-from urllib.parse import unquote
-import logging
 import json
-from datetime import timedelta
 import arrow
-from time import sleep
-from pprint import pprint as pp
+from tdam.endpoints import (OAUTH_TOKEN)
+from datetime import timedelta
+from urllib.parse import unquote
 
-"""
-    I access a developer.tdameritrade.com API app and query Quotes and Options
-"""
-
-TDAM_API_URL = "https://api.tdameritrade.com/"
-TDAM_OAUTH = "https://auth.tdameritrade.com/auth"
-LOGLEVEL = logging.INFO
 ACCESS_TIMEOUT = timedelta(minutes=20)
 TOKEN_EXPIRY = timedelta(days=30)
 
 
-def init_logging():
-    log_format = "\033[96m%(asctime)s " \
-                 "\033[95m[%(levelname)s] [%(name)s] " \
-                 "\033[93m%(message)s\033[0m"
-    logging.basicConfig(format=log_format, level=LOGLEVEL)
-    logging.info("!!! Logging Setup Complete !!!")
-    return logging.getLogger(__name__)
-
-
-LOG = init_logging()
-
-
-class DevApp(object):
+class TDAAccount(requests.Session):
+    """
+        TDA Account class to instantiate the account access session
+    """
     def __init__(self):
+        super().__init__()
         try:
             # Load in the existing VARS
             with open("./vars.json", "r") as vars_file:
@@ -39,27 +22,28 @@ class DevApp(object):
         except FileNotFoundError:
             # Trigger first time setup if vars.json is missing
             app_vars = {}
-            logging.info("=== First time execution detected ===")
+            print("=== First time execution detected ===")
             self._first_time_setup(app_vars)
-            logging.info("=== Saving user data to ./vars.json ===")
+            print("=== Saving user data to ./vars.json ===")
             with open("./vars.json", "w") as vars_file:
                 json.dump(app_vars, vars_file)
-            logging.info("=== Saved! ===")
-
-        # Set DevApp object variables
-        self._headers = {}
-        self.refresh_token = app_vars["REFRESH_TOKEN"]
-        self.consume_key = app_vars["CONSUMER_KEY"]
-        self.access_token = self._get_access_token()
-        self.access_expiry = arrow.now() + ACCESS_TIMEOUT
+            print("=== Saved! ===")
 
         # Refresh the refresh_token if needed
-        if arrow.get(app_vars["REFRESH_DATE"]) < arrow.now():
-            logging.info("Refreshing REFRESH_TOKEN...")
+        if arrow.get(app_vars["REFRESH_DATE"]) < arrow.now() \
+                or not app_vars["REFRESH_DATE"]:
+            print("Refreshing REFRESH_TOKEN...")
             app_vars["REFRESH_TOKEN"] = self._update_refresh_token()
             app_vars["REFRESH_DATE"] = str(arrow.now() + TOKEN_EXPIRY)
             with open("./vars.json", "w") as vars_file:
                 json.dump(app_vars, vars_file)
+
+        # Set DevApp object variables
+        self.headers = {}
+        self.refresh_token = app_vars["REFRESH_TOKEN"]
+        self.consume_key = app_vars["CONSUMER_KEY"]
+        self.access_token = self._get_access_token()
+        self.access_expiry = arrow.now() + ACCESS_TIMEOUT
 
     @staticmethod
     def _first_time_setup(app_vars):
@@ -107,7 +91,7 @@ class DevApp(object):
             "client_id": app_vars["CONSUMER_KEY"],
             "redirect_uri": app_vars["CALLBACK_URI"]
         }
-        resp = requests.post(TDAM_API_URL + "v1/oauth2/token", data=payload)
+        resp = requests.post(OAUTH_TOKEN, data=payload)
         app_vars["REFRESH_TOKEN"] = resp.json()["refresh_token"]
         app_vars["REFRESH_DATE"] = arrow.now() + TOKEN_EXPIRY
 
@@ -120,23 +104,17 @@ class DevApp(object):
             "access_type": "offline",
             "client_id": self.consume_key
         }
-        return requests.post(
-            TDAM_API_URL + "v1/oauth2/token",
-            data=payload
-        ).json()["refresh_token"]
+        return requests.post(OAUTH_TOKEN, data=payload).json()["refresh_token"]
 
     def _get_access_token(self):
-        logging.info("Updating access_token...")
+        print("Updating access_token...")
         payload = {
             "grant_type": "refresh_token",
             "refresh_token": self.refresh_token,
             "client_id": self.consume_key
         }
-        resp = requests.post(
-            TDAM_API_URL + "v1/oauth2/token",
-            data=payload
-        ).json()["access_token"]
-        self._headers.update(
+        resp = requests.post(OAUTH_TOKEN, data=payload).json()["access_token"]
+        self.headers.update(
             {"Authorization": "Bearer " + resp}
         )
         return resp
@@ -144,31 +122,3 @@ class DevApp(object):
     def renew_access(self):
         self.access_token = self._get_access_token()
         self.access_expiry = arrow.now() + ACCESS_TIMEOUT
-
-    def get_quote(self, ticker):
-        logging.info(f"Querying for Quote data of ticker: {ticker}")
-        resp = requests.get(
-            TDAM_API_URL + f'v1/marketdata/{ticker}/quotes',
-            headers=self._headers
-        ).json()
-        pp(resp)
-
-
-def main():
-    app = DevApp()
-
-    while True:
-        if app.access_expiry < arrow.now():
-            app.renew_access()
-        sleep(1)
-        app.get_quote("MCD")
-        break
-
-
-if __name__ == "__main__":
-    # noinspection PyBroadException
-    try:
-        exit(main())
-    except Exception:
-        LOG.exception("Exception in main()")
-        exit(1)
