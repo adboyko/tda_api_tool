@@ -24,6 +24,10 @@ def init_logging():
                  "\033[93m%(message)s\033[0m"
     logging.basicConfig(format=log_format, level=LOGLEVEL)
     logging.info("!!! Logging Setup Complete !!!")
+    return logging.getLogger(__name__)
+
+
+LOG = init_logging()
 
 
 class DevApp(object):
@@ -150,8 +154,7 @@ class DevApp(object):
         pp(resp)
 
 
-if __name__ == "__main__":
-    init_logging()
+def main():
     app = DevApp()
 
     while True:
@@ -160,3 +163,12 @@ if __name__ == "__main__":
         sleep(1)
         app.get_quote("MCD")
         break
+
+
+if __name__ == "__main__":
+    # noinspection PyBroadException
+    try:
+        exit(main())
+    except Exception:
+        LOG.exception("Exception in main()")
+        exit(1)
