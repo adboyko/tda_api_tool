@@ -1,6 +1,7 @@
 import logging
 import argparse
 import calendar
+from pprint import pprint as pp
 from arrow import now as arrownow
 from tdam.queries import TDAQueries
 
@@ -45,13 +46,15 @@ def set_arguments():
         "-o",
         "--optchain",
         action="store_true",
-        help="Get the latest option chain for symbol(s)"
+        help="Get the latest option chain for symbol. "
+             "Use -q for Quote of symbol"
     )
     args.add_argument(
         "-d",
         "--optdepth",
         type=int,
         action="store",
+        default=1,
         help="The depth of the option chain above "
              "and below the At-The-Money price"
     )
@@ -65,22 +68,12 @@ def set_arguments():
         choices=["SINGLE", "ANALYTICAL", "COVERED", "VERITCAL", "CALENDAR",
                  "STRANGLE", "STRADDLE", "BUTTERFLY", "CONDOR", "DIAGONAL",
                  "COLLAR", "ROLL"],
-        help='''The strategy chain to query for.
-                    Default is: SINGLE
-                    Possible values are:
-                      - SINGLE
-                      - ANALYTICAL
-                      - COVERED
-                      - VERTICAL
-                      - CALENDAR
-                      - STRANGLE
-                      - STRADDLE
-                      - BUTTERFLY
-                      - CONDOR
-                      - DIAGONAL
-                      - COLLAR
-                      - ROLL 
-            '''
+        help="The strategy chain to query for. Default is: SINGLE\n"
+             "Possible values are: "
+             "[ SINGLE | ANALYTICAL | COVERED | VERTICAL | CALENDAR | "
+             "STRANGLE | STRADDLE | BUTTERFLY | CONDOR | DIAGONAL | "
+             "COLLAR | ROLL ]",
+        metavar="OPTSTRAT"
     )
     args.add_argument(
         "-e",
@@ -90,8 +83,18 @@ def set_arguments():
         nargs='?',
         default=expiry_default,
         metavar="YYYY-MM-DD",
-        help="Returns only expirations before this date."
+        help="Returns only expirations before this date. "
              f"Default: {expiry_default}"
+    )
+    args.add_argument(
+        "--equities",
+        action="store_true",
+        help="Print your currently held EQUITY assets"
+    )
+    args.add_argument(
+        "--options",
+        action="store_true",
+        help="Print your currenetly held OPTION assets"
     )
 
     return args
@@ -102,14 +105,18 @@ def main():
     querier = TDAQueries(LOG)
     while True:
         if args.quote:
-            querier.get_quote(args.symbol)
+            pp(querier.get_quote(args.symbol))
         if args.optchain:
-            querier.get_option_chain(
+            pp(querier.get_option_chain(
                 args.symbol,
+                args.optdepth,
                 args.optstrat,
-                args.optexpiry,
-                args.optstrat
-            )
+                args.optexpiry
+            ))
+        if args.equities:
+            querier.display_curr_pos("EQUITY")
+        if args.options:
+            querier.display_curr_pos("OPTION")
         # sleep(1)
         break
 

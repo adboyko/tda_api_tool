@@ -1,7 +1,7 @@
 import requests
 import json
 import arrow
-from tdam.endpoints import (OAUTH_TOKEN)
+from tdam.endpoints import (OAUTH_TOKEN, ACCOUNTS_DATA)
 from datetime import timedelta
 from urllib.parse import unquote
 
@@ -44,6 +44,8 @@ class TDAAccount(requests.Session):
         self.consume_key = app_vars["CONSUMER_KEY"]
         self.access_token = self._get_access_token()
         self.access_expiry = arrow.now() + ACCESS_TIMEOUT
+        self.equity_positions = self.update_positions("EQUITY")
+        self.option_positions = self.update_positions("OPTION")
 
     @staticmethod
     def _first_time_setup(app_vars):
@@ -104,7 +106,7 @@ class TDAAccount(requests.Session):
             "access_type": "offline",
             "client_id": self.consume_key
         }
-        return requests.post(OAUTH_TOKEN, data=payload).json()["refresh_token"]
+        return self.post(OAUTH_TOKEN, data=payload).json()["refresh_token"]
 
     def _get_access_token(self):
         print("Updating access_token...")
@@ -113,7 +115,7 @@ class TDAAccount(requests.Session):
             "refresh_token": self.refresh_token,
             "client_id": self.consume_key
         }
-        resp = requests.post(OAUTH_TOKEN, data=payload).json()["access_token"]
+        resp = self.post(OAUTH_TOKEN, data=payload).json()["access_token"]
         self.headers.update(
             {"Authorization": "Bearer " + resp}
         )
@@ -122,3 +124,26 @@ class TDAAccount(requests.Session):
     def renew_access(self):
         self.access_token = self._get_access_token()
         self.access_expiry = arrow.now() + ACCESS_TIMEOUT
+
+    def update_positions(self, pos_type):
+        positions = []
+        payload = {
+            "fields": "positions"
+        }
+        resp = self.get(
+            ACCOUNTS_DATA,
+            params=payload,
+            headers=self.headers
+        ).json()
+        if len(resp) != 1:
+            return []
+        raw_positions = resp[-1]["securitiesAccount"]["positions"]
+        for pos in raw_positions:
+            if pos["instrument"]["assetType"] == pos_type:
+                positions.append(
+                    {
+                        "symbol": pos["instrument"]["symbol"],
+                        "quantity": pos["shortQuantity"] + pos["longQuantity"]
+                     }
+                )
+        return positions
