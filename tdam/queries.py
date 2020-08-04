@@ -1,7 +1,7 @@
 import arrow
 from pprint import pprint as pp
 from tdam.account import TDAAccount
-from tdam.endpoints import (GET_SINGLE_QUOTE)
+from tdam.endpoints import (GET_SINGLE_QUOTE, GET_OPTION_CHAIN)
 
 
 class TDAQueries(object):
@@ -25,10 +25,26 @@ class TDAQueries(object):
         self.logger = logger
 
     @_Decorators.check_access
-    def get_quote(self, ticker):
-        self.logger.info(f"Querying for Quote data of ticker: {ticker}")
+    def get_quote(self, symbol):
+        self.logger.info(f"Querying for Quote data of ticker: {symbol}")
         resp = self.account.get(
-            GET_SINGLE_QUOTE.format(ticker=ticker),
+            GET_SINGLE_QUOTE.format(ticker=symbol),
             headers=self.account.headers
+        ).json()
+        pp(resp)
+
+    @_Decorators.check_access
+    def get_option_chain(self, symbol, strike_count, strat, expiry_date):
+        self.logger.info(f"Querying for Option Chain data of ticker: {symbol}")
+        parameters = {
+            "symbol": symbol,
+            "strikeCount": strike_count,
+            "includeQuotes": "TRUE",
+            "strategy": strat,
+            "toDate": expiry_date
+        }
+        resp = self.account.get(
+            GET_OPTION_CHAIN,
+            params=parameters
         ).json()
         pp(resp)
