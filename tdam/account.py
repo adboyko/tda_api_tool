@@ -16,10 +16,12 @@ class TDAAccount(requests.Session):
     def __init__(self):
         super().__init__()
         try:
+            self.first_time = False
             # Load in the existing VARS
             with open("./vars.json", "r") as vars_file:
                 app_vars = json.load(vars_file)
         except FileNotFoundError:
+            self.first_time = True
             # Trigger first time setup if vars.json is missing
             app_vars = {}
             print("=== First time execution detected ===")
@@ -109,7 +111,6 @@ class TDAAccount(requests.Session):
         return self.post(OAUTH_TOKEN, data=payload).json()["refresh_token"]
 
     def _get_access_token(self):
-        print("Updating access_token...")
         payload = {
             "grant_type": "refresh_token",
             "refresh_token": self.refresh_token,

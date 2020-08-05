@@ -1,6 +1,7 @@
 import logging
 import argparse
 import calendar
+from sys import argv
 from pprint import pprint as pp
 from arrow import now as arrownow
 from tdam.queries import TDAQueries
@@ -101,24 +102,30 @@ def set_arguments():
 
 
 def main():
-    args = set_arguments().parse_args()
+    args = set_arguments()
     querier = TDAQueries(LOG)
-    while True:
-        if args.quote:
-            pp(querier.get_quote(args.symbol))
-        if args.optchain:
-            pp(querier.get_option_chain(
-                args.symbol,
-                args.optdepth,
-                args.optstrat,
-                args.optexpiry
-            ))
-        if args.equities:
-            querier.display_curr_pos("EQUITY")
-        if args.options:
-            querier.display_curr_pos("OPTION")
-        # sleep(1)
-        break
+
+    if len(argv) > 1:
+        args = args.parse_args()
+        while True:
+            if args.quote:
+                pp(querier.get_quote(args.symbol))
+            if args.optchain:
+                pp(querier.get_option_chain(
+                    args.symbol,
+                    args.optdepth,
+                    args.optstrat,
+                    args.optexpiry
+                ))
+            if args.equities:
+                querier.display_curr_pos("EQUITY")
+            if args.options:
+                querier.display_curr_pos("OPTION")
+            # sleep(1)
+            break
+    else:
+        if not querier.account.first_time:
+            args.print_help()
 
 
 if __name__ == "__main__":
