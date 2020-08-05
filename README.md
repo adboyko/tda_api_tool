@@ -12,8 +12,14 @@ I'm still learning. Input is welcome. Forks and PRs are welcome.
 - Clone this repo
 - Preferably, set up a venv for the local clone
 - `pip install -r requirements.txt`
-- `python tdam.py`
-- Routinely check for updates with `git pull`!
+- On first run: `python tdam.py`
+  - Subsequent runs will give Help Dialog if already OAUTH'd
+- For help dialog:
+  - `python tdam.py`,
+  - `python tdam.py -h`, or
+  - `python tdam.py --help`
+
+Be sure to routinely check for updates with `git pull`!
 
 ### Planned TODOs:
 - [ ] Add symbol memory storage (DB or file?)
