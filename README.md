@@ -12,12 +12,12 @@ I'm still learning. Input is welcome. Forks and PRs are welcome.
 - Clone this repo
 - Preferably, set up a venv for the local clone
 - `pip install -r requirements.txt`
-- On first run: `python tdam.py`
+- On first run: `python apitool/cli.py`
   - Subsequent runs will give Help Dialog if already OAUTH'd
 - For help dialog:
-  - `python tdam.py`,
-  - `python tdam.py -h`, or
-  - `python tdam.py --help`
+  - `python apitool/tdam.py`,
+  - `python apitool/tdam.py -h`, or
+  - `python apitool/tdam.py --help`
 
 Be sure to routinely check for updates with `git pull`!
 

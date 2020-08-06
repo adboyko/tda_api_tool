@@ -1,5 +1,13 @@
 ## Changelog for TDA API Tool
 
+## [0.3.1]
+### [No-Tracker] - 2020-08-05
+- Renamed module directory to apitool
+- Renamed main module to cli.py
+- Moved Class modules into helpers directory
+- Linted all files with pylint
+  - disabled two minor offenses that may vanish later
+
 ## [0.3.0]
 ### [No-Tracker] - 2020-08-04
 - Bugfix for single option-chain method call

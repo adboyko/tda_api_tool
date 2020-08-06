@@ -1,9 +1,12 @@
-import requests
+"""
+    The account class and method definitions
+"""
 import json
-import arrow
-from tdam.endpoints import (OAUTH_TOKEN, ACCOUNTS_DATA)
 from datetime import timedelta
 from urllib.parse import unquote
+import arrow
+import requests
+from helpers.endpoints import (OAUTH_TOKEN, ACCOUNTS_DATA)
 
 ACCESS_TIMEOUT = timedelta(minutes=20)
 TOKEN_EXPIRY = timedelta(days=30)
@@ -46,8 +49,10 @@ class TDAAccount(requests.Session):
         self.consume_key = app_vars["CONSUMER_KEY"]
         self.access_token = self._get_access_token()
         self.access_expiry = arrow.now() + ACCESS_TIMEOUT
-        self.equity_positions = self.update_positions("EQUITY")
-        self.option_positions = self.update_positions("OPTION")
+        self.positions = {
+            "EQUITY": self.update_positions("EQUITY"),
+            "OPTION": self.update_positions("OPTION")
+        }
 
     @staticmethod
     def _first_time_setup(app_vars):
@@ -117,16 +122,24 @@ class TDAAccount(requests.Session):
             "client_id": self.consume_key
         }
         resp = self.post(OAUTH_TOKEN, data=payload).json()["access_token"]
-        self.headers.update(
-            {"Authorization": "Bearer " + resp}
-        )
+        self.headers.update({"Authorization": "Bearer " + resp})
         return resp
 
     def renew_access(self):
+        """Renew the access token for the account instance"""
         self.access_token = self._get_access_token()
         self.access_expiry = arrow.now() + ACCESS_TIMEOUT
 
     def update_positions(self, pos_type):
+        """Update the equity or option positions of the account instance
+
+        Args:
+            pos_type (str): Expecting "EQUITY" or "OPTION"
+
+        Returns:
+            list: Returns a list of dicts for each asset and its quantity
+
+        """
         positions = []
         payload = {
             "fields": "positions"
@@ -145,6 +158,6 @@ class TDAAccount(requests.Session):
                     {
                         "symbol": pos["instrument"]["symbol"],
                         "quantity": pos["shortQuantity"] + pos["longQuantity"]
-                     }
+                    }
                 )
         return positions
