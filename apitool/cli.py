@@ -1,17 +1,29 @@
+#!/usr/bin/env python3
+"""
+   Description
+        I access a developer.tdameritrade.com API app and
+        query Quotes and Options
+"""
+
 import logging
 import argparse
 import calendar
-from sys import argv
+import sys
 from pprint import pprint as pp
 from arrow import now as arrownow
-from tdam.queries import TDAQueries
-
-"""
-    I access a developer.tdameritrade.com API app and query Quotes and Options
-"""
+from helpers.queries import TDAQueries
 
 
 def init_logging(loglevel):
+    """Set Logging
+
+    Args:
+        loglevel (logging.LEVEL): logging.LEVEL where LEVEL is desired LEVEL
+
+    Returns:
+        logging object
+
+    """
     log_format = "\033[96m%(asctime)s " \
                  "\033[95m[%(levelname)s] [%(name)s] " \
                  "\033[93m%(message)s\033[0m"
@@ -21,6 +33,12 @@ def init_logging(loglevel):
 
 
 def set_arguments():
+    """Uses argparse to create a cli-friendly argument acceptor
+
+    Returns:
+        argsparse ArgumentParser object
+
+    """
     # Get last day of this month for --optexpiry default
     year_month = arrownow().date().isoformat().split("-")
     year_month[2] = str(
@@ -102,10 +120,11 @@ def set_arguments():
 
 
 def main():
+    """The main body for cli.py and currently the entire apitool"""
     args = set_arguments()
     querier = TDAQueries(LOG)
 
-    if len(argv) > 1:
+    if len(sys.argv) > 1:
         args = args.parse_args()
         while True:
             if args.quote:
@@ -135,7 +154,7 @@ if __name__ == "__main__":
     # Start main()
     # noinspection PyBroadException
     try:
-        exit(main())
-    except Exception:
+        sys.exit(main())
+    except Exception:  # pylint: disable=W0703
         LOG.exception("Exception in main()")
-        exit(1)
+        sys.exit(1)
