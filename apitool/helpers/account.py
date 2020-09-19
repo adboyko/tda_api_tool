@@ -38,6 +38,8 @@ class TDAAccount(requests.Session):
         if arrow.get(app_vars["REFRESH_DATE"]) < arrow.now() \
                 or not app_vars["REFRESH_DATE"]:
             print("Refreshing REFRESH_TOKEN...")
+            self.refresh_token = app_vars["REFRESH_TOKEN"]
+            self.consume_key = app_vars["CONSUMER_KEY"]
             app_vars["REFRESH_TOKEN"] = self._update_refresh_token()
             app_vars["REFRESH_DATE"] = str(arrow.now() + TOKEN_EXPIRY)
             with open("./vars.json", "w") as vars_file:
@@ -161,3 +163,20 @@ class TDAAccount(requests.Session):
                     }
                 )
         return positions
+
+    @classmethod
+    def check_access(cls, func):
+        """I'm a decorator for checking access token expiry
+
+        Args:
+            func: The decorated function
+
+        Returns:
+            The function after the decorator actions are taken
+
+        """
+        def inner(*args, **kwargs):
+            if args[0].account.access_expiry < arrow.now():
+                args[0].account.refresh_token()
+            return func(*args, **kwargs)
+        return inner

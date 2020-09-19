@@ -1,5 +1,9 @@
 ## Changelog for TDA API Tool
 
+## [0.3.2]
+### [No-Tracker] - 2020-09-19
+- Fix for variables in account.py missing for refreshing token
+
 ## [0.3.1]
 ### [No-Tracker] - 2020-08-05
 - Renamed module directory to apitool

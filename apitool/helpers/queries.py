@@ -1,7 +1,6 @@
 """
     The queries class and methods
 """
-import arrow
 from tabulate import tabulate
 from helpers.account import TDAAccount
 from helpers.endpoints import (GET_SINGLE_QUOTE, GET_OPTION_CHAIN)
@@ -11,32 +10,11 @@ class TDAQueries:
     """
         Queries class for substantiating access to API and sending queries
     """
-    class _Decorators:  # pylint: disable=R0903
-        """
-            Private class to define decorator functions for queries class
-        """
-        @classmethod
-        def check_access(cls, func):
-            """Decorator method to check account instance access token
-
-            Args:
-                func: The wrapped function
-
-            Returns:
-                The wrapped function results
-
-            """
-            def query_func(self, *args, **kwargs):
-                if self.account.access_expiry < arrow.now():
-                    self.account.refresh_token()
-                return func(self, *args, **kwargs)
-            return query_func
-
     def __init__(self, logger):
         self.account = TDAAccount()
         self.logger = logger
 
-    @_Decorators.check_access
+    @TDAAccount.check_access
     def get_quote(self, symbol):
         """Query for a single Symbol's Quote data
 
@@ -54,7 +32,7 @@ class TDAQueries:
         ).json()
         return resp[symbol]
 
-    @_Decorators.check_access
+    @TDAAccount.check_access
     def get_option_chain(self, symbol, strike_count, strat, expiry_date):
         """Query for data about a single option chain
 
@@ -82,7 +60,7 @@ class TDAQueries:
         ).json()
         return resp
 
-    @_Decorators.check_access
+    @TDAAccount.check_access
     def display_curr_pos(self, pos_type):
         """Display the current EQUITY or OPTION positions of account instance
 
